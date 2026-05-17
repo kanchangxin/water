@@ -1,0 +1,11 @@
+<resources>
+    <color name="primary">#667eea</color>
+    <color name="primaryDark">#5a6fd6</color>
+    <color name="secondary">#764ba2</color>
+    <color name="white">#ffffff</color>
+    <color name="textPrimary">#333333</color>
+    <color name="textSecondary">#666666</color>
+    <color name="cardBackground">#f8f9fa</color>
+    <color name="statusActive">#d4edda</color>
+    <color name="statusInactive">#f8d7da</color>
+</resources>
