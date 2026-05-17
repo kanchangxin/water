@@ -1,5 +1,6 @@
 package com.waterremind.app;
 
+import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
