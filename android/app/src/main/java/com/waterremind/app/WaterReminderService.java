@@ -74,7 +74,7 @@ public class WaterReminderService extends Service {
         }
     }
 
-    private NotificationCompat.Builder createServiceNotification() {
+    private Notification createServiceNotification() {
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
             this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
@@ -86,7 +86,8 @@ public class WaterReminderService extends Service {
             .setContentText("提醒服务运行中...")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentIntent(pendingIntent)
-            .setOngoing(true);
+            .setOngoing(true)
+            .build();
     }
 
     private void scheduleNextReminder() {
