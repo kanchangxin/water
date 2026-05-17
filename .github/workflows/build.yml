@@ -19,12 +19,14 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v3
+    - name: Download Gradle 7.5
+      run: |
+        wget -q https://services.gradle.org/distributions/gradle-7.5-bin.zip -P /tmp
+        unzip -q /tmp/gradle-7.5-bin.zip -d /tmp
 
     - name: Build with Gradle
       working-directory: android
-      run: gradle assembleDebug
+      run: /tmp/gradle-7.5/bin/gradle assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
