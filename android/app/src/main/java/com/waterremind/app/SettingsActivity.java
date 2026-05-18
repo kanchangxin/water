@@ -194,11 +194,6 @@ public class SettingsActivity extends AppCompatActivity {
                 selectedRingtoneUri = uri;
                 ringtone = RingtoneManager.getRingtone(this, selectedRingtoneUri);
                 ringtoneName.setText(ringtone.getTitle(this));
-                try {
-                    ringtone.play();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
             }
         }
     }

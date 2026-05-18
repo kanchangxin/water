@@ -151,6 +151,8 @@ public class MainActivity extends AppCompatActivity {
     private void startTimer() {
         if (isRunning) return;
 
+        loadSettings();
+        totalSeconds = intervalMinutes * 60;
         isRunning = true;
         updateDisplay();
         updateStatus();
@@ -166,6 +168,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFinish() {
                 showNotification();
+                loadSettings();
                 totalSeconds = intervalMinutes * 60;
                 updateDisplay();
                 startTimer();
@@ -188,6 +191,7 @@ public class MainActivity extends AppCompatActivity {
         prefs.edit().putString("last_drink_time", currentTime).apply();
         lastDrankText.setText("上次喝水: " + currentTime);
 
+        loadSettings();
         totalSeconds = intervalMinutes * 60;
         updateDisplay();
 
@@ -195,6 +199,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void testReminder() {
+        initRingtone();
         showNotification();
     }
 
@@ -284,6 +289,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        initRingtone();
         loadSettings();
+        if (isRunning && countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+        isRunning = false;
+        totalSeconds = intervalMinutes * 60;
+        updateDisplay();
+        updateStatus();
     }
 }
