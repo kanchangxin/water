@@ -40,12 +40,28 @@ public class WaterReminderService extends Service {
         if (intent != null && ACTION_REMIND.equals(intent.getAction())) {
             showReminder();
             scheduleNextReminder();
+            startForeground(NOTIFICATION_ID, createServiceNotification());
         } else {
             loadSettings();
             scheduleNextReminder();
             startForeground(NOTIFICATION_ID, createServiceNotification());
         }
         return START_STICKY;
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        restartService();
+    }
+
+    private void restartService() {
+        Intent intent = new Intent(getApplicationContext(), WaterReminderService.class);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
     }
 
     private void loadSettings() {
@@ -93,9 +109,9 @@ public class WaterReminderService extends Service {
 
     private void scheduleNextReminder() {
         loadSettings();
-        Intent intent = new Intent(this, WaterReminderService.class);
+        Intent intent = new Intent(this, AlarmReceiver.class);
         intent.setAction(ACTION_REMIND);
-        PendingIntent pendingIntent = PendingIntent.getService(
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
             this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 

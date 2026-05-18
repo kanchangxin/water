@@ -17,6 +17,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.app.AlarmManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String CHANNEL_ID = "WATER_REMIND_CHANNEL";
     private static final int NOTIFICATION_ID = 2001;
     private static final int REQUEST_PERMISSIONS = 100;
+    private static final int REQUEST_SCHEDULE_EXACT_ALARM = 101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
         prefs = getSharedPreferences("WaterRemind", MODE_PRIVATE);
 
         requestPermissions();
+        checkExactAlarmPermission();
         createNotificationChannel();
         loadSettings();
         updateDisplay();
@@ -75,6 +78,29 @@ public class MainActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.POST_NOTIFICATIONS},
                     REQUEST_PERMISSIONS
                 );
+            }
+        }
+    }
+
+    private void checkExactAlarmPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                startActivityForResult(intent, REQUEST_SCHEDULE_EXACT_ALARM);
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_SCHEDULE_EXACT_ALARM) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+                if (!alarmManager.canScheduleExactAlarms()) {
+                    Toast.makeText(this, "精确闹钟权限未授予，提醒可能不准确", Toast.LENGTH_LONG).show();
+                }
             }
         }
     }
