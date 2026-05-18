@@ -184,7 +184,22 @@ public class MainActivity extends AppCompatActivity {
         if (countDownTimer != null) {
             countDownTimer.cancel();
         }
+        stopService(new Intent(this, WaterReminderService.class));
+        cancelAlarm();
         updateStatus();
+    }
+
+    private void cancelAlarm() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, AlarmReceiver.class);
+        intent.setAction("com.waterremind.action.REMIND");
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+            this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        if (alarmManager != null) {
+            alarmManager.cancel(pendingIntent);
+            pendingIntent.cancel();
+        }
     }
 
     private void markAsDrank() {
