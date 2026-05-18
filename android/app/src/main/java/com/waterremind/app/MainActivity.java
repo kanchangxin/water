@@ -40,6 +40,11 @@ public class MainActivity extends AppCompatActivity {
     private static final int NOTIFICATION_ID = 2001;
     private static final int REQUEST_PERMISSIONS = 100;
     private static final int REQUEST_SCHEDULE_EXACT_ALARM = 101;
+    private static final int REQUEST_RINGTONE_PICKER = 102;
+    private static final String PREF_RINGTONE_URI = "ringtone_uri";
+
+    private Button ringtoneBtn;
+    private TextView ringtoneName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +61,8 @@ public class MainActivity extends AppCompatActivity {
         lastDrankText = findViewById(R.id.lastDrank);
         testBtn = findViewById(R.id.testBtn);
         test1minBtn = findViewById(R.id.test1minBtn);
+        ringtoneBtn = findViewById(R.id.ringtoneBtn);
+        ringtoneName = findViewById(R.id.ringtoneName);
 
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
         prefs = getSharedPreferences("WaterRemind", MODE_PRIVATE);
@@ -73,12 +80,30 @@ public class MainActivity extends AppCompatActivity {
         drankBtn.setOnClickListener(v -> markAsDrank());
         testBtn.setOnClickListener(v -> testReminder());
         test1minBtn.setOnClickListener(v -> start1MinuteTest());
+        ringtoneBtn.setOnClickListener(v -> showRingtonePicker());
     }
 
     private void initRingtone() {
-        Uri notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        if (notificationUri != null) {
-            ringtone = RingtoneManager.getRingtone(this, notificationUri);
+        String savedUri = prefs.getString(PREF_RINGTONE_URI, null);
+        Uri ringtoneUri;
+        
+        if (savedUri != null) {
+            ringtoneUri = Uri.parse(savedUri);
+        } else {
+            ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        }
+        
+        if (ringtoneUri != null) {
+            ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
+            updateRingtoneName();
+        }
+    }
+
+    private void updateRingtoneName() {
+        if (ringtone != null) {
+            ringtoneName.setText(ringtone.getTitle(this));
+        } else {
+            ringtoneName.setText("默认铃声");
         }
     }
 
@@ -88,6 +113,39 @@ public class MainActivity extends AppCompatActivity {
                 ringtone.play();
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    private void showRingtonePicker() {
+        Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION);
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "选择提醒铃声");
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true);
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false);
+        
+        String savedUri = prefs.getString(PREF_RINGTONE_URI, null);
+        if (savedUri != null) {
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(savedUri));
+        } else {
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, 
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
+        }
+        
+        startActivityForResult(intent, REQUEST_RINGTONE_PICKER);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == REQUEST_RINGTONE_PICKER && resultCode == RESULT_OK) {
+            Uri selectedUri = data.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+            
+            if (selectedUri != null) {
+                prefs.edit().putString(PREF_RINGTONE_URI, selectedUri.toString()).apply();
+                ringtone = RingtoneManager.getRingtone(this, selectedUri);
+                updateRingtoneName();
             }
         }
     }

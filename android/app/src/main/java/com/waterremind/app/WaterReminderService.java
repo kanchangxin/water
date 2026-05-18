@@ -41,9 +41,17 @@ public class WaterReminderService extends Service {
     }
 
     private void initRingtone() {
-        Uri notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        if (notificationUri != null) {
-            ringtone = RingtoneManager.getRingtone(this, notificationUri);
+        String savedUri = prefs.getString("ringtone_uri", null);
+        Uri ringtoneUri;
+        
+        if (savedUri != null) {
+            ringtoneUri = Uri.parse(savedUri);
+        } else {
+            ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        }
+        
+        if (ringtoneUri != null) {
+            ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
         }
     }
 
