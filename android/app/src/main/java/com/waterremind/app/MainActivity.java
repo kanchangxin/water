@@ -171,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
                 loadSettings();
                 totalSeconds = intervalMinutes * 60;
                 updateDisplay();
+                isRunning = false;
                 startTimer();
             }
         }.start();

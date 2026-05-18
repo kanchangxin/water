@@ -22,7 +22,7 @@ public class SettingsActivity extends AppCompatActivity {
     private static final int REQUEST_RINGTONE_PICKER = 102;
 
     private EditText intervalInput;
-    private Button ringtoneBtn, saveBtn, backBtn, helpBtn;
+    private Button ringtoneBtn, saveBtn, backBtn, helpBtn, previewRingtone;
     private Button increaseInterval, decreaseInterval;
     private Button nightStartTimeBtn, nightEndTimeBtn, napStartTimeBtn, napEndTimeBtn;
     private EditText customMessage, customMessageSub;
@@ -49,6 +49,7 @@ public class SettingsActivity extends AppCompatActivity {
         increaseInterval = findViewById(R.id.increaseInterval);
         decreaseInterval = findViewById(R.id.decreaseInterval);
         ringtoneBtn = findViewById(R.id.ringtoneBtn);
+        previewRingtone = findViewById(R.id.previewRingtone);
         saveBtn = findViewById(R.id.saveBtn);
         backBtn = findViewById(R.id.backBtn);
         helpBtn = findViewById(R.id.helpBtn);
@@ -69,6 +70,7 @@ public class SettingsActivity extends AppCompatActivity {
         decreaseInterval.setOnClickListener(v -> adjustInterval(-1));
 
         ringtoneBtn.setOnClickListener(v -> showRingtonePicker());
+        previewRingtone.setOnClickListener(v -> previewRingtone());
 
         nightStartTimeBtn.setOnClickListener(v -> showTimePicker(true, true));
         nightEndTimeBtn.setOnClickListener(v -> showTimePicker(true, false));
@@ -182,6 +184,21 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         startActivityForResult(intent, REQUEST_RINGTONE_PICKER);
+    }
+
+    private void previewRingtone() {
+        if (ringtone != null) {
+            try {
+                if (ringtone.isPlaying()) {
+                    ringtone.stop();
+                }
+                ringtone.play();
+            } catch (Exception e) {
+                Toast.makeText(this, "无法预览铃声", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(this, "请先选择铃声", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
