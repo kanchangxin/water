@@ -3,227 +3,146 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/background_gradient"
-    android:padding="24dp">
+    android:background="@drawable/background_gradient">
 
+    <!-- 顶部导航栏 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center"
-        android:paddingTop="32dp"
-        android:paddingBottom="32dp">
+        android:background="@color/primaryDark"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:paddingLeft="24dp"
+        android:paddingRight="24dp"
+        android:elevation="4dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="💧"
-            android:textSize="48sp" />
+            android:textSize="32sp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="喝水提醒"
-            android:textSize="32sp"
-            android:textColor="@color/white"
-            android:layout_marginLeft="16dp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/timer_background"
-        android:padding="32dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            android:id="@+id/timer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="20:00"
-            android:textSize="56sp"
-            android:textColor="@color/white"
-            android:gravity="center"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="提醒间隔:"
-            android:textSize="18sp"
-            android:textColor="@color/white" />
-
-        <EditText
-            android:id="@+id/interval"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:text="20"
             android:textSize="24sp"
-            android:textColor="@color/textPrimary"
-            android:background="@drawable/edittext_background"
+            android:textColor="@color/white"
+            android:layout_marginLeft="12dp"
+            android:layout_gravity="center_vertical" />
+
+        <Button
+            android:id="@+id/helpBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="❓"
+            android:textSize="20sp"
+            android:background="@drawable/btn_transparent"
             android:padding="8dp"
-            android:gravity="center"
-            android:inputType="number"
-            android:layout_marginLeft="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="分钟"
-            android:textSize="18sp"
-            android:textColor="@color/white"
-            android:layout_marginLeft="8dp" />
+            android:layout_gravity="center_vertical" />
     </LinearLayout>
 
+    <!-- 计时器区域 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:gravity="center"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp">
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/timer_background"
+            android:padding="48dp"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/timer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="20:00"
+                android:textSize="72sp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-light" />
+        </LinearLayout>
 
         <TextView
+            android:id="@+id/status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="提醒铃声:"
-            android:textSize="18sp"
-            android:textColor="@color/white" />
-
-        <Button
-            android:id="@+id/ringtoneBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="选择铃声"
-            android:textSize="16sp"
-            android:textColor="@color/textPrimary"
-            android:background="@drawable/btn_secondary"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp"
-            android:layout_marginLeft="8dp" />
-
-        <TextView
-            android:id="@+id/ringtoneName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="默认铃声"
-            android:textSize="16sp"
-            android:textColor="@color/textSecondary"
-            android:layout_marginLeft="8dp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="16dp">
-
-        <Button
-            android:id="@+id/startBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="开始"
+            android:text="提醒已启动"
             android:textSize="18sp"
             android:textColor="@color/white"
-            android:background="@drawable/btn_primary"
-            android:paddingLeft="24dp"
-            android:paddingRight="24dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp" />
-
-        <Button
-            android:id="@+id/pauseBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="暂停"
-            android:textSize="18sp"
-            android:textColor="@color/textPrimary"
-            android:background="@drawable/btn_secondary"
-            android:paddingLeft="24dp"
-            android:paddingRight="24dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp"
-            android:layout_marginLeft="16dp" />
-
-        <Button
-            android:id="@+id/resetBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="重置"
-            android:textSize="18sp"
-            android:textColor="@color/white"
-            android:background="@drawable/btn_danger"
-            android:paddingLeft="24dp"
-            android:paddingRight="24dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp"
-            android:layout_marginLeft="16dp" />
+            android:layout_marginTop="24dp"
+            android:alpha="0.8" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="16dp">
-
-        <Button
-            android:id="@+id/testBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="测试提醒"
-            android:textSize="18sp"
-            android:textColor="@color/white"
-            android:background="@drawable/btn_success"
-            android:paddingLeft="24dp"
-            android:paddingRight="24dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp" />
-
-        <Button
-            android:id="@+id/test1minBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="1分钟测试"
-            android:textSize="18sp"
-            android:textColor="@color/textPrimary"
-            android:background="@drawable/btn_secondary"
-            android:paddingLeft="24dp"
-            android:paddingRight="24dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp"
-            android:layout_marginLeft="16dp" />
-    </LinearLayout>
-
+    <!-- 控制按钮 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginTop="24dp">
+        android:background="@drawable/card_background"
+        android:padding="24dp">
 
-        <TextView
-            android:id="@+id/status"
+        <!-- 主要控制按钮 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="提醒未启动"
-            android:textSize="18sp"
-            android:textColor="@color/textPrimary"
-            android:background="@color/statusInactive"
-            android:padding="12dp"
+            android:orientation="horizontal"
             android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/startBtn"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="▶ 开始"
+                android:textSize="18sp"
+                android:textColor="@color/white"
+                android:background="@drawable/btn_primary"
+                android:layout_marginRight="8dp" />
+
+            <Button
+                android:id="@+id/pauseBtn"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="⏸ 暂停"
+                android:textSize="18sp"
+                android:textColor="@color/primary"
+                android:background="@drawable/btn_secondary"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp" />
+
+            <Button
+                android:id="@+id/resetBtn"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="↺ 重置"
+                android:textSize="18sp"
+                android:textColor="@color/white"
+                android:background="@drawable/btn_danger"
+                android:layout_marginLeft="8dp" />
+        </LinearLayout>
+
+        <!-- 喝水记录 -->
+        <Button
+            android:id="@+id/drankBtn"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="✓ 我喝完了"
+            android:textSize="18sp"
+            android:textColor="@color/white"
+            android:background="@drawable/btn_success"
             android:layout_marginBottom="16dp" />
 
         <TextView
@@ -231,21 +150,39 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="上次喝水: 暂无记录"
-            android:textSize="16sp"
+            android:textSize="14sp"
             android:textColor="@color/textSecondary"
-            android:background="@color/cardBackground"
-            android:padding="12dp"
+            android:gravity="center"
             android:layout_marginBottom="16dp" />
 
-        <Button
-            android:id="@+id/drankBtn"
+        <!-- 测试和高级设置按钮 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="我喝完了"
-            android:textSize="20sp"
-            android:textColor="@color/white"
-            android:background="@drawable/btn_success"
-            android:padding="16dp" />
-    </LinearLayout>
+            android:orientation="horizontal"
+            android:gravity="center">
 
+            <Button
+                android:id="@+id/testBtn"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="测试提醒"
+                android:textSize="16sp"
+                android:textColor="@color/primary"
+                android:background="@drawable/btn_secondary"
+                android:layout_marginRight="8dp" />
+
+            <Button
+                android:id="@+id/settingsBtn"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="⚙ 高级设置"
+                android:textSize="16sp"
+                android:textColor="@color/white"
+                android:background="@drawable/btn_primary"
+                android:layout_marginLeft="8dp" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

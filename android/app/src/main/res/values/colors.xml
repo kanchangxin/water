@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="primary">#667eea</color>
     <color name="primaryDark">#5a6fd6</color>
@@ -5,7 +6,12 @@
     <color name="white">#ffffff</color>
     <color name="textPrimary">#333333</color>
     <color name="textSecondary">#666666</color>
-    <color name="cardBackground">#f8f9fa</color>
+    <color name="textLight">#999999</color>
+    <color name="cardBackground">#ffffff</color>
     <color name="statusActive">#d4edda</color>
     <color name="statusInactive">#f8d7da</color>
+    <color name="success">#28a745</color>
+    <color name="danger">#dc3545</color>
+    <color name="warning">#ffc107</color>
+    <color name="info">#17a2b8</color>
 </resources>

@@ -1,6 +1,13 @@
 package com.waterremind.app;
 
-import androidx.appcompat.app.AppCompatActivity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.app.Notification;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Vibrator;
@@ -8,25 +15,19 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.content.SharedPreferences;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Intent;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
-import androidx.core.content.ContextCompat;
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.app.AlarmManager;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextView timerDisplay;
-    private EditText intervalInput;
-    private Button startBtn, pauseBtn, resetBtn, drankBtn, testBtn, test1minBtn;
+    private Button startBtn, pauseBtn, resetBtn, drankBtn, testBtn, helpBtn, settingsBtn;
     private TextView statusText, lastDrankText;
     private CountDownTimer countDownTimer;
     private long totalSeconds = 1200;
@@ -38,13 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String CHANNEL_ID = "WATER_REMIND_CHANNEL";
     private static final int NOTIFICATION_ID = 2001;
-    private static final int REQUEST_PERMISSIONS = 100;
     private static final int REQUEST_SCHEDULE_EXACT_ALARM = 101;
-    private static final int REQUEST_RINGTONE_PICKER = 102;
-    private static final String PREF_RINGTONE_URI = "ringtone_uri";
-
-    private Button ringtoneBtn;
-    private TextView ringtoneName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         timerDisplay = findViewById(R.id.timer);
-        intervalInput = findViewById(R.id.interval);
         startBtn = findViewById(R.id.startBtn);
         pauseBtn = findViewById(R.id.pauseBtn);
         resetBtn = findViewById(R.id.resetBtn);
@@ -60,15 +54,13 @@ public class MainActivity extends AppCompatActivity {
         statusText = findViewById(R.id.status);
         lastDrankText = findViewById(R.id.lastDrank);
         testBtn = findViewById(R.id.testBtn);
-        test1minBtn = findViewById(R.id.test1minBtn);
-        ringtoneBtn = findViewById(R.id.ringtoneBtn);
-        ringtoneName = findViewById(R.id.ringtoneName);
+        helpBtn = findViewById(R.id.helpBtn);
+        settingsBtn = findViewById(R.id.settingsBtn);
 
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
         prefs = getSharedPreferences("WaterRemind", MODE_PRIVATE);
         initRingtone();
 
-        requestPermissions();
         checkExactAlarmPermission();
         createNotificationChannel();
         loadSettings();
@@ -79,12 +71,19 @@ public class MainActivity extends AppCompatActivity {
         resetBtn.setOnClickListener(v -> resetTimer());
         drankBtn.setOnClickListener(v -> markAsDrank());
         testBtn.setOnClickListener(v -> testReminder());
-        test1minBtn.setOnClickListener(v -> start1MinuteTest());
-        ringtoneBtn.setOnClickListener(v -> showRingtonePicker());
+        helpBtn.setOnClickListener(v -> showHelpDialog());
+        settingsBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
+        });
+
+        if (isRunning) {
+            startService();
+        }
     }
 
     private void initRingtone() {
-        String savedUri = prefs.getString(PREF_RINGTONE_URI, null);
+        String savedUri = prefs.getString("ringtone_uri", null);
         Uri ringtoneUri;
         
         if (savedUri != null) {
@@ -95,184 +94,69 @@ public class MainActivity extends AppCompatActivity {
         
         if (ringtoneUri != null) {
             ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
-            updateRingtoneName();
         }
     }
 
-    private void updateRingtoneName() {
-        if (ringtone != null) {
-            ringtoneName.setText(ringtone.getTitle(this));
-        } else {
-            ringtoneName.setText("默认铃声");
-        }
-    }
+    private void showHelpDialog() {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setTitle("📖 权限设置帮助");
 
-    private void playRingtone() {
-        if (ringtone != null && !ringtone.isPlaying()) {
-            try {
-                ringtone.play();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+        String helpText =
+            "为确保应用在熄屏和后台运行时能正常接收提醒，请按以下步骤设置：\n\n" +
+            "1. 打开手机设置 → 电池 → 后台应用耗电管理（或类似选项）\n" +
+            "2. 找到 喝水提醒 应用\n" +
+            "3. 将其设置为 允许后台耗电 或 不受电池优化限制\n\n" +
+            "不同品牌手机的设置路径可能略有不同：\n\n" +
+            "华为/荣耀：\n" +
+            "设置 > 电池 > 应用启动管理 > 找到喝水提醒 > 关闭\"自动管理\" > 手动打开\"允许后台活动\"\n\n" +
+            "小米/红米：\n" +
+            "设置 > 电池与性能 > 应用耗电管理 > 喝水提醒 > 设为\"无限制\"\n\n" +
+            "OPPO/一加：\n" +
+            "设置 > 电池 > 耗电保护 > 喝水提醒 > 关闭\"后台冻结\"和\"深度睡眠\"\n\n" +
+            "vivo/iQOO：\n" +
+            "设置 > 电池 > 后台高耗电 > 找到喝水提醒 > 开启开关\n\n" +
+            "三星：\n" +
+            "设置 > 电池和设备维护 > 电池 > 后台应用程序 > 添加喝水提醒\n\n" +
+            "原生安卓：\n" +
+            "设置 > 电池 > 电池优化 > 不优化 > 选择喝水提醒";
 
-    private void showRingtonePicker() {
-        Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
-        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION);
-        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "选择提醒铃声");
-        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true);
-        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false);
-        
-        String savedUri = prefs.getString(PREF_RINGTONE_URI, null);
-        if (savedUri != null) {
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(savedUri));
-        } else {
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, 
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
-        }
-        
-        startActivityForResult(intent, REQUEST_RINGTONE_PICKER);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        
-        if (requestCode == REQUEST_RINGTONE_PICKER && resultCode == RESULT_OK) {
-            Uri selectedUri = data.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
-            
-            if (selectedUri != null) {
-                prefs.edit().putString(PREF_RINGTONE_URI, selectedUri.toString()).apply();
-                ringtone = RingtoneManager.getRingtone(this, selectedUri);
-                updateRingtoneName();
-            }
-        }
-    }
-
-    private void requestPermissions() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(
-                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                    REQUEST_PERMISSIONS
-                );
-            }
-        }
+        builder.setMessage(helpText);
+        builder.setPositiveButton("我知道了", (dialog, which) -> dialog.dismiss());
+        builder.show();
     }
 
     private void checkExactAlarmPermission() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-            if (!alarmManager.canScheduleExactAlarms()) {
-                Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
-                startActivityForResult(intent, REQUEST_SCHEDULE_EXACT_ALARM);
-            }
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_SCHEDULE_EXACT_ALARM) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-                if (!alarmManager.canScheduleExactAlarms()) {
-                    Toast.makeText(this, "精确闹钟权限未授予，提醒可能不准确", Toast.LENGTH_LONG).show();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            if (alarmManager != null && !alarmManager.canScheduleExactAlarms()) {
+                Toast.makeText(this, "请允许精确闹钟权限以确保定时提醒", Toast.LENGTH_LONG).show();
+                try {
+                    Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                    startActivityForResult(intent, REQUEST_SCHEDULE_EXACT_ALARM);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            }
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_PERMISSIONS) {
-            if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "通知权限被拒绝，提醒功能可能受限", Toast.LENGTH_LONG).show();
             }
         }
     }
 
     private void loadSettings() {
         intervalMinutes = prefs.getLong("interval", 20);
-        intervalInput.setText(String.valueOf(intervalMinutes));
         totalSeconds = intervalMinutes * 60;
 
-        long lastDrank = prefs.getLong("lastDrank", 0);
-        if (lastDrank > 0) {
-            updateLastDrankDisplay(lastDrank);
+        String lastDrank = prefs.getString("last_drink_time", "");
+        if (!lastDrank.isEmpty()) {
+            lastDrankText.setText("上次喝水: " + lastDrank);
         }
-
-        isRunning = prefs.getBoolean("isRunning", false);
-        if (isRunning) {
-            isRunning = false;
-            startTimer();
-        }
-    }
-
-    private void createNotificationChannel() {
-        NotificationChannel channel = new NotificationChannel(
-            CHANNEL_ID,
-            "喝水提醒",
-            NotificationManager.IMPORTANCE_HIGH
-        );
-        channel.setDescription("提醒您喝水");
-        channel.enableVibration(true);
-        NotificationManager manager = getSystemService(NotificationManager.class);
-        if (manager != null) {
-            manager.createNotificationChannel(channel);
-        }
-    }
-
-    private void updateDisplay() {
-        long minutes = totalSeconds / 60;
-        long seconds = totalSeconds % 60;
-        timerDisplay.setText(String.format("%02d:%02d", minutes, seconds));
-    }
-
-    private void updateLastDrankDisplay(long timestamp) {
-        long now = System.currentTimeMillis();
-        long diff = now - timestamp;
-        long hours = diff / (1000 * 60 * 60);
-        long minutes = (diff % (1000 * 60 * 60)) / (1000 * 60);
-
-        String timeStr;
-        if (hours > 0) {
-            timeStr = hours + "小时" + minutes + "分钟前";
-        } else if (minutes > 0) {
-            timeStr = minutes + "分钟前";
-        } else {
-            timeStr = "刚刚";
-        }
-        lastDrankText.setText("上次喝水: " + timeStr);
     }
 
     private void startTimer() {
         if (isRunning) return;
 
-        try {
-            intervalMinutes = Long.parseLong(intervalInput.getText().toString());
-            if (intervalMinutes < 1 || intervalMinutes > 120) {
-                Toast.makeText(this, "请输入1-120分钟", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "请输入有效数字", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        totalSeconds = intervalMinutes * 60;
         isRunning = true;
-        statusText.setText("提醒进行中...");
-        statusText.setBackgroundColor(ContextCompat.getColor(this, R.color.statusActive));
-        startBtn.setEnabled(false);
-
-        prefs.edit().putLong("interval", intervalMinutes).apply();
-        prefs.edit().putBoolean("isRunning", true).apply();
-
-        startBackgroundService();
+        updateDisplay();
+        updateStatus();
+        startService();
 
         countDownTimer = new CountDownTimer(totalSeconds * 1000, 1000) {
             @Override
@@ -291,54 +175,53 @@ public class MainActivity extends AppCompatActivity {
         }.start();
     }
 
-    private void startBackgroundService() {
-        Intent serviceIntent = new Intent(this, WaterReminderService.class);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
-        }
-    }
-
-    private void stopBackgroundService() {
-        Intent serviceIntent = new Intent(this, WaterReminderService.class);
-        stopService(serviceIntent);
-    }
-
     private void pauseTimer() {
+        if (!isRunning) return;
+
+        isRunning = false;
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+        updateStatus();
+    }
+
+    private void resetTimer() {
         if (countDownTimer != null) {
             countDownTimer.cancel();
         }
         isRunning = false;
-        statusText.setText("提醒已暂停");
-        statusText.setBackgroundColor(ContextCompat.getColor(this, R.color.statusInactive));
-        startBtn.setEnabled(true);
-
-        prefs.edit().putBoolean("isRunning", false).apply();
-        stopBackgroundService();
-    }
-
-    private void resetTimer() {
-        pauseTimer();
-        try {
-            intervalMinutes = Long.parseLong(intervalInput.getText().toString());
-        } catch (NumberFormatException e) {
-            intervalMinutes = 20;
-        }
         totalSeconds = intervalMinutes * 60;
         updateDisplay();
-        statusText.setText("提醒未启动");
+        updateStatus();
+        stopService();
     }
 
     private void markAsDrank() {
-        long now = System.currentTimeMillis();
-        prefs.edit().putLong("lastDrank", now).apply();
-        updateLastDrankDisplay(now);
-        Toast.makeText(this, "已记录喝水时间", Toast.LENGTH_SHORT).show();
+        String currentTime = java.text.DateFormat.getTimeInstance().format(new java.util.Date());
+        prefs.edit().putString("last_drink_time", currentTime).apply();
+        lastDrankText.setText("上次喝水: " + currentTime);
 
+        totalSeconds = intervalMinutes * 60;
+        updateDisplay();
+
+        Toast.makeText(this, "已记录喝水时间", Toast.LENGTH_SHORT).show();
+    }
+
+    private void testReminder() {
+        showNotification();
+    }
+
+    private void updateDisplay() {
+        long minutes = totalSeconds / 60;
+        long seconds = totalSeconds % 60;
+        timerDisplay.setText(String.format("%02d:%02d", minutes, seconds));
+    }
+
+    private void updateStatus() {
         if (isRunning) {
-            totalSeconds = intervalMinutes * 60;
-            updateDisplay();
+            statusText.setText("提醒已启动");
+        } else {
+            statusText.setText("提醒已暂停");
         }
     }
 
@@ -346,16 +229,18 @@ public class MainActivity extends AppCompatActivity {
         vibrate();
         playRingtone();
 
+        String title = prefs.getString("custom_message_title", "💧 该喝水啦！");
+        String body = prefs.getString("custom_message_body", "站起来活动一下，喝杯水吧～");
+
         Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(
             this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_water)
-            .setContentTitle("💧 该喝水啦！")
-            .setContentText("站起来活动一下，喝杯水吧～")
+            .setContentTitle(title)
+            .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
@@ -365,8 +250,6 @@ public class MainActivity extends AppCompatActivity {
         if (manager != null) {
             manager.notify(NOTIFICATION_ID, builder.build());
         }
-
-        Toast.makeText(this, "💧 该喝水啦！", Toast.LENGTH_LONG).show();
     }
 
     private void vibrate() {
@@ -376,25 +259,48 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void testReminder() {
-        Toast.makeText(this, "🔔 正在测试提醒功能...", Toast.LENGTH_SHORT).show();
-        showNotification();
+    private void playRingtone() {
+        if (ringtone != null && !ringtone.isPlaying()) {
+            try {
+                ringtone.play();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    private void start1MinuteTest() {
-        if (isRunning) {
-            pauseTimer();
+    private void startService() {
+        Intent intent = new Intent(this, WaterReminderService.class);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
         }
-        intervalInput.setText("1");
-        startTimer();
-        Toast.makeText(this, "⏱️ 已设置为1分钟测试模式", Toast.LENGTH_SHORT).show();
+    }
+
+    private void stopService() {
+        Intent intent = new Intent(this, WaterReminderService.class);
+        stopService(intent);
+    }
+
+    private void createNotificationChannel() {
+        NotificationChannel channel = new NotificationChannel(
+            CHANNEL_ID,
+            "喝水提醒",
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        channel.setDescription("提醒您喝水");
+        channel.enableVibration(true);
+
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager != null) {
+            manager.createNotificationChannel(channel);
+        }
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
-        }
+    protected void onResume() {
+        super.onResume();
+        loadSettings();
     }
 }

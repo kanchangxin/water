@@ -58,8 +58,12 @@ public class WaterReminderService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && ACTION_REMIND.equals(intent.getAction())) {
-            showReminder();
-            scheduleNextReminder();
+            if (isInDoNotDisturbPeriod()) {
+                scheduleNextReminder();
+            } else {
+                showReminder();
+                scheduleNextReminder();
+            }
             startForeground(NOTIFICATION_ID, createServiceNotification());
         } else {
             loadSettings();
@@ -86,6 +90,38 @@ public class WaterReminderService extends Service {
 
     private void loadSettings() {
         intervalMinutes = prefs.getLong("interval", 20);
+    }
+
+    private boolean isInDoNotDisturbPeriod() {
+        if (!prefs.getBoolean("dnd_enabled", false)) {
+            return false;
+        }
+
+        java.util.Calendar now = java.util.Calendar.getInstance();
+        int currentMinutes = now.get(java.util.Calendar.HOUR_OF_DAY) * 60 + now.get(java.util.Calendar.MINUTE);
+
+        int nightStart = prefs.getInt("night_start_hour", 22) * 60 + prefs.getInt("night_start_minute", 0);
+        int nightEnd = prefs.getInt("night_end_hour", 7) * 60 + prefs.getInt("night_end_minute", 0);
+        int napStart = prefs.getInt("nap_start_hour", 12) * 60 + prefs.getInt("nap_start_minute", 0);
+        int napEnd = prefs.getInt("nap_end_hour", 14) * 60 + prefs.getInt("nap_end_minute", 0);
+
+        if (isInPeriod(currentMinutes, nightStart, nightEnd)) {
+            return true;
+        }
+
+        if (isInPeriod(currentMinutes, napStart, napEnd)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isInPeriod(int current, int start, int end) {
+        if (start <= end) {
+            return current >= start && current < end;
+        } else {
+            return current >= start || current < end;
+        }
     }
 
     private void createNotificationChannel() {
@@ -191,10 +227,13 @@ public class WaterReminderService extends Service {
             this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
+        String title = prefs.getString("custom_message_title", "💧 该喝水啦！");
+        String body = prefs.getString("custom_message_body", "站起来活动一下，喝杯水吧～");
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID_REMIND)
             .setSmallIcon(R.drawable.ic_water)
-            .setContentTitle("💧 该喝水啦！")
-            .setContentText("站起来活动一下，喝杯水吧～")
+            .setContentTitle(title)
+            .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
