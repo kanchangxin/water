@@ -131,6 +131,7 @@ public class WaterReminderService extends Service {
             NotificationManager.IMPORTANCE_LOW
         );
         serviceChannel.setDescription("后台提醒服务");
+        serviceChannel.setShowBadge(false);
 
         NotificationChannel remindChannel = new NotificationChannel(
             CHANNEL_ID_REMIND,
@@ -139,6 +140,8 @@ public class WaterReminderService extends Service {
         );
         remindChannel.setDescription("提醒您喝水");
         remindChannel.enableVibration(true);
+        remindChannel.enableLights(true);
+        remindChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 
         NotificationManager manager = getSystemService(NotificationManager.class);
         if (manager != null) {

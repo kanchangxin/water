@@ -23,6 +23,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private EditText intervalInput;
     private Button ringtoneBtn, saveBtn, backBtn, helpBtn;
+    private Button increaseInterval, decreaseInterval;
     private Button nightStartTimeBtn, nightEndTimeBtn, napStartTimeBtn, napEndTimeBtn;
     private EditText customMessage, customMessageSub;
     private TextView ringtoneName;
@@ -30,6 +31,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private SharedPreferences prefs;
     private Ringtone ringtone;
+    private Uri selectedRingtoneUri;
 
     private int nightStartHour = 22, nightStartMinute = 0;
     private int nightEndHour = 7, nightEndMinute = 0;
@@ -44,6 +46,8 @@ public class SettingsActivity extends AppCompatActivity {
         prefs = getSharedPreferences("WaterRemind", MODE_PRIVATE);
 
         intervalInput = findViewById(R.id.intervalInput);
+        increaseInterval = findViewById(R.id.increaseInterval);
+        decreaseInterval = findViewById(R.id.decreaseInterval);
         ringtoneBtn = findViewById(R.id.ringtoneBtn);
         saveBtn = findViewById(R.id.saveBtn);
         backBtn = findViewById(R.id.backBtn);
@@ -61,6 +65,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         backBtn.setOnClickListener(v -> finish());
 
+        increaseInterval.setOnClickListener(v -> adjustInterval(1));
+        decreaseInterval.setOnClickListener(v -> adjustInterval(-1));
+
         ringtoneBtn.setOnClickListener(v -> showRingtonePicker());
 
         nightStartTimeBtn.setOnClickListener(v -> showTimePicker(true, true));
@@ -77,14 +84,13 @@ public class SettingsActivity extends AppCompatActivity {
         intervalInput.setText(String.valueOf(prefs.getLong("interval", 20)));
 
         String savedUri = prefs.getString("ringtone_uri", null);
-        Uri ringtoneUri;
         if (savedUri != null) {
-            ringtoneUri = Uri.parse(savedUri);
+            selectedRingtoneUri = Uri.parse(savedUri);
         } else {
-            ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            selectedRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         }
-        if (ringtoneUri != null) {
-            ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
+        if (selectedRingtoneUri != null) {
+            ringtone = RingtoneManager.getRingtone(this, selectedRingtoneUri);
             ringtoneName.setText(ringtone.getTitle(this));
         }
 
@@ -103,6 +109,18 @@ public class SettingsActivity extends AppCompatActivity {
         napEndMinute = prefs.getInt("nap_end_minute", 0);
 
         updateTimeButtons();
+    }
+
+    private void adjustInterval(int delta) {
+        try {
+            long current = Long.parseLong(intervalInput.getText().toString());
+            long newValue = current + delta;
+            if (newValue < 1) newValue = 1;
+            if (newValue > 180) newValue = 180;
+            intervalInput.setText(String.valueOf(newValue));
+        } catch (NumberFormatException e) {
+            intervalInput.setText("20");
+        }
     }
 
     private void updateTimeButtons() {
@@ -171,10 +189,16 @@ public class SettingsActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == REQUEST_RINGTONE_PICKER && resultCode == RESULT_OK) {
-            Uri selectedUri = data.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
-            if (selectedUri != null) {
-                ringtone = RingtoneManager.getRingtone(this, selectedUri);
+            Uri uri = data.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+            if (uri != null) {
+                selectedRingtoneUri = uri;
+                ringtone = RingtoneManager.getRingtone(this, selectedRingtoneUri);
                 ringtoneName.setText(ringtone.getTitle(this));
+                try {
+                    ringtone.play();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -208,9 +232,8 @@ public class SettingsActivity extends AppCompatActivity {
                 editor.putString("custom_message_body", body);
             }
 
-            String savedUri = prefs.getString("ringtone_uri", null);
-            if (savedUri != null) {
-                editor.putString("ringtone_uri", savedUri);
+            if (selectedRingtoneUri != null) {
+                editor.putString("ringtone_uri", selectedRingtoneUri.toString());
             }
 
             editor.apply();

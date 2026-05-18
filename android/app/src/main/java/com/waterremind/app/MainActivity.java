@@ -27,7 +27,7 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity {
 
     private TextView timerDisplay;
-    private Button startBtn, pauseBtn, resetBtn, drankBtn, testBtn, helpBtn, settingsBtn;
+    private Button startBtn, pauseBtn, drankBtn, testBtn, helpBtn, settingsBtn;
     private TextView statusText, lastDrankText;
     private CountDownTimer countDownTimer;
     private long totalSeconds = 1200;
@@ -49,7 +49,6 @@ public class MainActivity extends AppCompatActivity {
         timerDisplay = findViewById(R.id.timer);
         startBtn = findViewById(R.id.startBtn);
         pauseBtn = findViewById(R.id.pauseBtn);
-        resetBtn = findViewById(R.id.resetBtn);
         drankBtn = findViewById(R.id.drankBtn);
         statusText = findViewById(R.id.status);
         lastDrankText = findViewById(R.id.lastDrank);
@@ -68,7 +67,6 @@ public class MainActivity extends AppCompatActivity {
 
         startBtn.setOnClickListener(v -> startTimer());
         pauseBtn.setOnClickListener(v -> pauseTimer());
-        resetBtn.setOnClickListener(v -> resetTimer());
         drankBtn.setOnClickListener(v -> markAsDrank());
         testBtn.setOnClickListener(v -> testReminder());
         helpBtn.setOnClickListener(v -> showHelpDialog());
@@ -185,17 +183,6 @@ public class MainActivity extends AppCompatActivity {
         updateStatus();
     }
 
-    private void resetTimer() {
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
-        }
-        isRunning = false;
-        totalSeconds = intervalMinutes * 60;
-        updateDisplay();
-        updateStatus();
-        stopService();
-    }
-
     private void markAsDrank() {
         String currentTime = java.text.DateFormat.getTimeInstance().format(new java.util.Date());
         prefs.edit().putString("last_drink_time", currentTime).apply();
@@ -278,11 +265,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void stopService() {
-        Intent intent = new Intent(this, WaterReminderService.class);
-        stopService(intent);
-    }
-
     private void createNotificationChannel() {
         NotificationChannel channel = new NotificationChannel(
             CHANNEL_ID,
@@ -291,6 +273,7 @@ public class MainActivity extends AppCompatActivity {
         );
         channel.setDescription("提醒您喝水");
         channel.enableVibration(true);
+        channel.enableLights(true);
 
         NotificationManager manager = getSystemService(NotificationManager.class);
         if (manager != null) {
