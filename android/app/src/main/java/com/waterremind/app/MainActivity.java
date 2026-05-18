@@ -18,6 +18,9 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.app.AlarmManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isRunning = false;
     private Vibrator vibrator;
     private SharedPreferences prefs;
+    private Ringtone ringtone;
 
     private static final String CHANNEL_ID = "WATER_REMIND_CHANNEL";
     private static final int NOTIFICATION_ID = 2001;
@@ -55,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
         prefs = getSharedPreferences("WaterRemind", MODE_PRIVATE);
+        initRingtone();
 
         requestPermissions();
         checkExactAlarmPermission();
@@ -68,6 +73,23 @@ public class MainActivity extends AppCompatActivity {
         drankBtn.setOnClickListener(v -> markAsDrank());
         testBtn.setOnClickListener(v -> testReminder());
         test1minBtn.setOnClickListener(v -> start1MinuteTest());
+    }
+
+    private void initRingtone() {
+        Uri notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        if (notificationUri != null) {
+            ringtone = RingtoneManager.getRingtone(this, notificationUri);
+        }
+    }
+
+    private void playRingtone() {
+        if (ringtone != null && !ringtone.isPlaying()) {
+            try {
+                ringtone.play();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void requestPermissions() {
@@ -264,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showNotification() {
         vibrate();
+        playRingtone();
 
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);

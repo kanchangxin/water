@@ -12,6 +12,9 @@ import android.app.AlarmManager;
 import android.content.Context;
 import androidx.core.app.NotificationCompat;
 import android.os.Vibrator;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 
 public class WaterReminderService extends Service {
 
@@ -25,6 +28,7 @@ public class WaterReminderService extends Service {
     private Vibrator vibrator;
     private SharedPreferences prefs;
     private AlarmManager alarmManager;
+    private Ringtone ringtone;
 
     @Override
     public void onCreate() {
@@ -33,6 +37,14 @@ public class WaterReminderService extends Service {
         prefs = getSharedPreferences("WaterRemind", MODE_PRIVATE);
         alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         createNotificationChannel();
+        initRingtone();
+    }
+
+    private void initRingtone() {
+        Uri notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        if (notificationUri != null) {
+            ringtone = RingtoneManager.getRingtone(this, notificationUri);
+        }
     }
 
     @Override
@@ -142,6 +154,7 @@ public class WaterReminderService extends Service {
 
     private void showReminder() {
         vibrate();
+        playRingtone();
         sendNotification();
     }
 
@@ -149,6 +162,16 @@ public class WaterReminderService extends Service {
         if (vibrator != null && vibrator.hasVibrator()) {
             long[] pattern = {0, 500, 200, 500, 200, 500};
             vibrator.vibrate(pattern, -1);
+        }
+    }
+
+    private void playRingtone() {
+        if (ringtone != null && !ringtone.isPlaying()) {
+            try {
+                ringtone.play();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -177,6 +200,9 @@ public class WaterReminderService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (ringtone != null && ringtone.isPlaying()) {
+            ringtone.stop();
+        }
     }
 
     @Override
