@@ -8,6 +8,7 @@ import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,14 +16,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.app.NotificationCompat;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import java.util.Locale;
 
 public class SettingsActivity extends AppCompatActivity {
 
     private static final int REQUEST_RINGTONE_PICKER = 102;
+    private static final String CHANNEL_ID = "WATER_REMIND_CHANNEL";
+    private static final int NOTIFICATION_ID = 2001;
 
     private EditText intervalInput;
-    private Button ringtoneBtn, saveBtn, backBtn, helpBtn, previewRingtone;
+    private Button ringtoneBtn, saveBtn, backBtn, helpBtn, previewRingtone, testBtn;
     private Button increaseInterval, decreaseInterval;
     private Button nightStartTimeBtn, nightEndTimeBtn, napStartTimeBtn, napEndTimeBtn;
     private EditText customMessage, customMessageSub;
@@ -32,6 +39,7 @@ public class SettingsActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private Ringtone ringtone;
     private Uri selectedRingtoneUri;
+    private Vibrator vibrator;
 
     private int nightStartHour = 22, nightStartMinute = 0;
     private int nightEndHour = 7, nightEndMinute = 0;
@@ -44,6 +52,7 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
 
         prefs = getSharedPreferences("WaterRemind", MODE_PRIVATE);
+        vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 
         intervalInput = findViewById(R.id.intervalInput);
         increaseInterval = findViewById(R.id.increaseInterval);
@@ -61,6 +70,7 @@ public class SettingsActivity extends AppCompatActivity {
         customMessageSub = findViewById(R.id.customMessageSub2);
         ringtoneName = findViewById(R.id.ringtoneName);
         dndSwitch = findViewById(R.id.dndSwitch);
+        testBtn = findViewById(R.id.testBtn);
 
         loadSettings();
 
@@ -78,6 +88,7 @@ public class SettingsActivity extends AppCompatActivity {
         napEndTimeBtn.setOnClickListener(v -> showTimePicker(false, false));
 
         helpBtn.setOnClickListener(v -> showHelpDialog());
+        testBtn.setOnClickListener(v -> testReminder());
 
         saveBtn.setOnClickListener(v -> saveSettings());
     }
@@ -198,6 +209,50 @@ public class SettingsActivity extends AppCompatActivity {
             }
         } else {
             Toast.makeText(this, "请先选择铃声", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void testReminder() {
+        String title = prefs.getString("custom_message_title", "💧 该喝水啦！");
+        String body = prefs.getString("custom_message_body", "站起来活动一下，喝杯水吧～");
+
+        if (vibrator != null && vibrator.hasVibrator()) {
+            long[] pattern = {0, 500, 200, 500, 200, 500};
+            vibrator.vibrate(pattern, -1);
+        }
+
+        if (ringtone != null && !ringtone.isPlaying()) {
+            try {
+                ringtone.play();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+            this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_water)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setDefaults(NotificationCompat.DEFAULT_ALL);
+
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager != null) {
+            NotificationChannel channel = new NotificationChannel(
+                CHANNEL_ID, "喝水提醒", NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("提醒您喝水");
+            channel.enableVibration(true);
+            channel.enableLights(true);
+            manager.createNotificationChannel(channel);
+            manager.notify(NOTIFICATION_ID, builder.build());
         }
     }
 

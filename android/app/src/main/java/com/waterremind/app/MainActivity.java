@@ -4,7 +4,6 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,7 +11,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Vibrator;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,13 +20,12 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
-import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextView timerDisplay;
-    private Button startBtn, pauseBtn, drankBtn, testBtn, helpBtn, settingsBtn;
-    private TextView statusText, lastDrankText;
+    private Button startPauseBtn, helpBtn, settingsBtn;
+    private TextView statusText;
     private CountDownTimer countDownTimer;
     private long totalSeconds = 1200;
     private long intervalMinutes = 20;
@@ -40,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String CHANNEL_ID = "WATER_REMIND_CHANNEL";
     private static final int NOTIFICATION_ID = 2001;
     private static final int REQUEST_SCHEDULE_EXACT_ALARM = 101;
+    private static final int REQUEST_SETTINGS = 103;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,12 +45,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         timerDisplay = findViewById(R.id.timer);
-        startBtn = findViewById(R.id.startBtn);
-        pauseBtn = findViewById(R.id.pauseBtn);
-        drankBtn = findViewById(R.id.drankBtn);
+        startPauseBtn = findViewById(R.id.startPauseBtn);
         statusText = findViewById(R.id.status);
-        lastDrankText = findViewById(R.id.lastDrank);
-        testBtn = findViewById(R.id.testBtn);
         helpBtn = findViewById(R.id.helpBtn);
         settingsBtn = findViewById(R.id.settingsBtn);
 
@@ -63,33 +57,46 @@ public class MainActivity extends AppCompatActivity {
         checkExactAlarmPermission();
         createNotificationChannel();
         loadSettings();
-        updateDisplay();
 
-        startBtn.setOnClickListener(v -> startTimer());
-        pauseBtn.setOnClickListener(v -> pauseTimer());
-        drankBtn.setOnClickListener(v -> markAsDrank());
-        testBtn.setOnClickListener(v -> testReminder());
+        startPauseBtn.setOnClickListener(v -> toggleTimer());
         helpBtn.setOnClickListener(v -> showHelpDialog());
         settingsBtn.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_SETTINGS);
         });
 
-        if (isRunning) {
-            startService();
+        restoreTimerState();
+        updateDisplay();
+        updateButtonState();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_SETTINGS) {
+            initRingtone();
+            loadSettings();
+            if (isRunning && countDownTimer != null) {
+                countDownTimer.cancel();
+            }
+            isRunning = false;
+            totalSeconds = intervalMinutes * 60;
+            updateDisplay();
+            updateButtonState();
+            updateStatus();
         }
     }
 
     private void initRingtone() {
         String savedUri = prefs.getString("ringtone_uri", null);
         Uri ringtoneUri;
-        
+
         if (savedUri != null) {
             ringtoneUri = Uri.parse(savedUri);
         } else {
             ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         }
-        
+
         if (ringtoneUri != null) {
             ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
         }
@@ -140,11 +147,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadSettings() {
         intervalMinutes = prefs.getLong("interval", 20);
-        totalSeconds = intervalMinutes * 60;
+    }
 
-        String lastDrank = prefs.getString("last_drink_time", "");
-        if (!lastDrank.isEmpty()) {
-            lastDrankText.setText("上次喝水: " + lastDrank);
+    private void toggleTimer() {
+        if (isRunning) {
+            pauseTimer();
+        } else {
+            startTimer();
         }
     }
 
@@ -154,11 +163,17 @@ public class MainActivity extends AppCompatActivity {
         loadSettings();
         totalSeconds = intervalMinutes * 60;
         isRunning = true;
+
         updateDisplay();
+        updateButtonState();
         updateStatus();
         startService();
 
-        countDownTimer = new CountDownTimer(totalSeconds * 1000, 1000) {
+        startCountDownTimer(totalSeconds * 1000);
+    }
+
+    private void startCountDownTimer(long millisInFuture) {
+        countDownTimer = new CountDownTimer(millisInFuture, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 totalSeconds = millisUntilFinished / 1000;
@@ -186,6 +201,7 @@ public class MainActivity extends AppCompatActivity {
         }
         stopService(new Intent(this, WaterReminderService.class));
         cancelAlarm();
+        updateButtonState();
         updateStatus();
     }
 
@@ -202,27 +218,47 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void markAsDrank() {
-        String currentTime = java.text.DateFormat.getTimeInstance().format(new java.util.Date());
-        prefs.edit().putString("last_drink_time", currentTime).apply();
-        lastDrankText.setText("上次喝水: " + currentTime);
+    private void restoreTimerState() {
+        if (!prefs.getBoolean("timer_running", false)) {
+            totalSeconds = intervalMinutes * 60;
+            return;
+        }
 
-        loadSettings();
-        totalSeconds = intervalMinutes * 60;
-        updateDisplay();
+        long remainingMs = prefs.getLong("timer_remaining_ms", 0);
+        long pauseTimeMs = prefs.getLong("timer_pause_time_ms", 0);
 
-        Toast.makeText(this, "已记录喝水时间", Toast.LENGTH_SHORT).show();
-    }
+        if (remainingMs <= 0) {
+            totalSeconds = intervalMinutes * 60;
+            prefs.edit().putBoolean("timer_running", false).apply();
+            return;
+        }
 
-    private void testReminder() {
-        initRingtone();
-        showNotification();
+        long elapsed = System.currentTimeMillis() - pauseTimeMs;
+        long newRemaining = remainingMs - elapsed;
+
+        if (newRemaining > 0) {
+            isRunning = true;
+            totalSeconds = newRemaining / 1000;
+            startCountDownTimer(newRemaining);
+            startService();
+        } else {
+            totalSeconds = intervalMinutes * 60;
+            prefs.edit().putBoolean("timer_running", false).apply();
+        }
     }
 
     private void updateDisplay() {
         long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;
         timerDisplay.setText(String.format("%02d:%02d", minutes, seconds));
+    }
+
+    private void updateButtonState() {
+        if (isRunning) {
+            startPauseBtn.setText("⏸  暂  停");
+        } else {
+            startPauseBtn.setText("▶  开  始");
+        }
     }
 
     private void updateStatus() {
@@ -307,12 +343,21 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         initRingtone();
         loadSettings();
-        if (isRunning && countDownTimer != null) {
-            countDownTimer.cancel();
+        if (!isRunning) {
+            totalSeconds = intervalMinutes * 60;
+            updateDisplay();
         }
-        isRunning = false;
-        totalSeconds = intervalMinutes * 60;
-        updateDisplay();
+        updateButtonState();
         updateStatus();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        prefs.edit()
+            .putBoolean("timer_running", isRunning)
+            .putLong("timer_remaining_ms", totalSeconds * 1000)
+            .putLong("timer_pause_time_ms", System.currentTimeMillis())
+            .apply();
     }
 }

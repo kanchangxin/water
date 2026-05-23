@@ -408,13 +408,24 @@
                 android:layout_marginBottom="16dp" />
 
             <Button
+                android:id="@+id/testBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🔔 测试提醒"
+                android:textSize="16sp"
+                android:textColor="@color/white"
+                android:background="@drawable/btn_primary"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp" />
+
+            <Button
                 android:id="@+id/helpBtn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="查看权限设置帮助"
                 android:textSize="16sp"
-                android:textColor="@color/white"
-                android:background="@drawable/btn_primary"
+                android:textColor="@color/primary"
+                android:background="@drawable/btn_secondary"
                 android:padding="12dp" />
         </LinearLayout>
 

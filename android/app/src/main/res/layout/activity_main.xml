@@ -14,34 +14,45 @@
         android:paddingTop="16dp"
         android:paddingBottom="16dp"
         android:paddingLeft="24dp"
-        android:paddingRight="24dp"
-        android:elevation="4dp">
+        android:paddingRight="16dp"
+        android:elevation="4dp"
+        android:gravity="center_vertical">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="💧"
-            android:textSize="32sp" />
+            android:textSize="28sp" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="喝水提醒"
-            android:textSize="24sp"
+            android:textSize="22sp"
             android:textColor="@color/white"
-            android:layout_marginLeft="12dp"
-            android:layout_gravity="center_vertical" />
+            android:layout_marginLeft="10dp" />
+
+        <Button
+            android:id="@+id/settingsBtn"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:text="⚙"
+            android:textSize="16sp"
+            android:textColor="@color/white"
+            android:background="@drawable/btn_transparent"
+            android:padding="0dp" />
 
         <Button
             android:id="@+id/helpBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:text="❓"
-            android:textSize="20sp"
+            android:textSize="16sp"
+            android:textColor="@color/white"
             android:background="@drawable/btn_transparent"
-            android:padding="8dp"
-            android:layout_gravity="center_vertical" />
+            android:padding="0dp"
+            android:layout_marginLeft="4dp" />
     </LinearLayout>
 
     <!-- 计时器区域 -->
@@ -76,7 +87,7 @@
             android:id="@+id/status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="提醒已启动"
+            android:text="提醒已暂停"
             android:textSize="18sp"
             android:textColor="@color/white"
             android:layout_marginTop="24dp"
@@ -91,86 +102,13 @@
         android:background="@drawable/card_background"
         android:padding="24dp">
 
-        <!-- 主要控制按钮 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginBottom="16dp">
-
-            <Button
-                android:id="@+id/startBtn"
-                android:layout_width="0dp"
-                android:layout_height="56dp"
-                android:layout_weight="1"
-                android:text="▶ 开始"
-                android:textSize="18sp"
-                android:textColor="@color/white"
-                android:background="@drawable/btn_primary"
-                android:layout_marginRight="8dp" />
-
-            <Button
-                android:id="@+id/pauseBtn"
-                android:layout_width="0dp"
-                android:layout_height="56dp"
-                android:layout_weight="1"
-                android:text="⏸ 暂停"
-                android:textSize="18sp"
-                android:textColor="@color/primary"
-                android:background="@drawable/btn_secondary"
-                android:layout_marginLeft="8dp" />
-        </LinearLayout>
-
-        <!-- 喝水记录 -->
         <Button
-            android:id="@+id/drankBtn"
+            android:id="@+id/startPauseBtn"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="✓ 我喝完了"
-            android:textSize="18sp"
+            android:layout_height="60dp"
+            android:text="▶  开  始"
+            android:textSize="20sp"
             android:textColor="@color/white"
-            android:background="@drawable/btn_success"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:id="@+id/lastDrank"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="上次喝水: 暂无记录"
-            android:textSize="14sp"
-            android:textColor="@color/textSecondary"
-            android:gravity="center"
-            android:layout_marginBottom="16dp" />
-
-        <!-- 测试和高级设置按钮 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/testBtn"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:text="测试提醒"
-                android:textSize="16sp"
-                android:textColor="@color/primary"
-                android:background="@drawable/btn_secondary"
-                android:layout_marginRight="8dp" />
-
-            <Button
-                android:id="@+id/settingsBtn"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:text="⚙ 高级设置"
-                android:textSize="16sp"
-                android:textColor="@color/white"
-                android:background="@drawable/btn_primary"
-                android:layout_marginLeft="8dp" />
-        </LinearLayout>
+            android:background="@drawable/btn_primary" />
     </LinearLayout>
 </LinearLayout>
